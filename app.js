@@ -558,6 +558,9 @@ var SaveWriter = class {
 	get unsupportedVersion() {
 		return this.status === "unsupported-version";
 	}
+	get needsWrite() {
+		return this.status === "corrupt" || this.status === "write-failed";
+	}
 	load() {
 		let raw;
 		try {
@@ -636,33 +639,26 @@ function claimSaveOwnership(manager) {
 	};
 	if (!manager) return Promise.resolve(ownership);
 	return new Promise((resolve) => {
-		let resolved = false;
-		const finish = () => {
-			if (!resolved) {
-				resolved = true;
-				resolve(ownership);
-			}
-		};
 		try {
 			manager.request(`${saveKey}:owner`, { ifAvailable: true }, (lock) => {
 				if (!lock) {
 					status = "other-tab";
-					finish();
+					resolve(ownership);
 					return;
 				}
 				status = "writable";
 				const held = new Promise((release) => {
 					releaseLock = release;
 				});
-				finish();
+				resolve(ownership);
 				return held;
 			}).catch(() => {
 				if (status !== "writable") status = "unavailable";
-				finish();
+				resolve(ownership);
 			});
 		} catch {
 			status = "unavailable";
-			finish();
+			resolve(ownership);
 		}
 	});
 }
@@ -2810,7 +2806,8 @@ var Application = class {
 		this.announcements = [];
 		completeRun(this.currentState, time.elapsedMs);
 		this.currentState.overlay = { kind: "result" };
-		this.save();
+		const run = this.currentState.run;
+		if (run.mode === "daily" || run.mode === "classic" || run.mode !== null && run.finished !== null && run.finished.newPersonalBest || this.options.storage.needsWrite) this.save();
 	}
 	handleAudioFailure(failure, restored) {
 		const state = this.currentState;
@@ -3436,9 +3433,6 @@ var Autocomplete = class {
 			option.id = `corzaguessr-option-${index}`;
 			option.textContent = track.title;
 			option.setAttribute("role", "option");
-			const active = index === this.selectedIndex;
-			option.setAttribute("aria-selected", String(active));
-			if (active) option.className = "active";
 			return option;
 		});
 		this.list.replaceChildren(...options);
@@ -4507,8 +4501,7 @@ var VolumeControl = class {
 		this.input = input;
 		this.bars = [...container.querySelectorAll(".volume-bar")];
 		if (this.bars.length !== 8) throw new Error(`Corzaguessr volume control requires 8 bars.`);
-		this.input.value = String(initialVolume);
-		this.render(initialVolume);
+		this.setVolume(initialVolume);
 		this.input.addEventListener("input", () => {
 			const volume = Number(this.input.value);
 			this.render(volume);
@@ -4520,6 +4513,10 @@ var VolumeControl = class {
 	}
 	bind(handler) {
 		this.handler = handler;
+	}
+	setVolume(volume) {
+		this.input.value = String(volume);
+		this.render(volume);
 	}
 	render(volume) {
 		const activeBars = volume === 0 ? 0 : Math.ceil(volume * 8 / 100);
@@ -4762,6 +4759,9 @@ var GameView = class {
 	}
 	showResultShareCopied() {
 		this.resultView.showShareCopied();
+	}
+	setVolume(volume) {
+		this.volume.setVolume(volume);
 	}
 	resetTransientUi() {
 		cancelAnimationFrame(this.announcementFrame);
@@ -5177,17 +5177,19 @@ async function initialize(root) {
 		if (!document.hidden) application?.dispatch({ type: "visible" });
 	});
 	const storage = new SaveWriter(void 0, () => ownership?.writable ?? false, () => ownership?.notice ?? "");
-	const player = storage.load();
+	const initialPlayer = storage.load();
 	const moduleUrl = new URL(import.meta.url);
 	const catalogUrl = new URL("tracks.json", moduleUrl);
 	catalogUrl.search = moduleUrl.search;
 	const catalog = new CatalogSource(catalogUrl);
-	const view = new GameView(root, player.volume, (filename) => catalog.assetUrl(`covers/${filename}`));
+	const view = new GameView(root, initialPlayer.volume, (filename) => catalog.assetUrl(`covers/${filename}`));
 	ownership = await claimSaveOwnership(navigator.locks);
 	if (pageLeft) {
 		ownership.release();
 		return;
 	}
+	const player = storage.load();
+	if (player.volume !== initialPlayer.volume) view.setVolume(player.volume);
 	if (storage.unsupportedVersion) ownership.release();
 	application = new Application({
 		view,
