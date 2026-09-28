@@ -700,7 +700,6 @@
         "deezer": "https://www.deezer.com/track/4104897741"
       },
       "duration": 157,
-      "isNew": true
     },
     {
       "id": 51,
@@ -730,6 +729,21 @@
         "deezer": "https://www.deezer.com/track/4200561762"
       },
       "duration": 191,
+      "isNew": true
+    },
+    {
+      "id": 53,
+      "releaseDate": "null",
+      "title": "LUVBYT3 - Animal (Aeons Ago remix)",
+      "links": {
+        "spotify": "",
+        "appleMusic": "",
+        "youtube": "",
+        "amazonMusic": "",
+        "tidal": "",
+        "deezer": ""
+      },
+      "duration": 219,
       "isNew": true
     }
   ]
