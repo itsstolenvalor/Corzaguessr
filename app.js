@@ -714,7 +714,8 @@ var AudioPlayer = class {
 			this.preloadSlot = null;
 			slot.failed = true;
 			this.releaseSlot(slot);
-			return false;
+			this.loadPrimary(round);
+			return;
 		}
 		this.cancelPlaybackWatchdog();
 		const previous = this.primarySlot;
@@ -725,7 +726,6 @@ var AudioPlayer = class {
 			this.lastPrimarySlotId = previous.id;
 			this.releaseSlot(previous);
 		}
-		return true;
 	}
 	playPrimary(round, restart) {
 		const slot = this.primarySlot;
@@ -2596,16 +2596,7 @@ var Application = class {
 					round,
 					phase: "unheard"
 				};
-				if (!this.audio.promotePreload(round)) {
-					this.dispatch({
-						type: "failed",
-						failure: {
-							stage: "primary-play",
-							round
-						}
-					});
-					return;
-				}
+				this.audio.promotePreload(round);
 			} else {
 				const round = this.chooseNextRound(state.rounds.previousTrackId);
 				if (!round) {
@@ -2826,6 +2817,10 @@ var Application = class {
 		this.clock.pause();
 		this.clearTrackLoading();
 		this.audio.releasePrimary();
+		if (state.run.mode === "seek") state.run.phase = {
+			kind: "selecting",
+			second: null
+		};
 		state.rounds.consecutiveFailures++;
 		if (!preserve && !restored && state.rounds.consecutiveFailures <= 2) {
 			state.rounds.failedTrackIds.add(failure.round.track.id);
@@ -2839,10 +2834,6 @@ var Application = class {
 				state.run.resumePending = false;
 				this.save();
 			}
-			if (state.run.mode === "seek") state.run.phase = {
-				kind: "selecting",
-				second: null
-			};
 			if (play) this.announce(uiText.selectedTrackReplacing);
 			if (play) this.startRound();
 			else this.prepareRound();
