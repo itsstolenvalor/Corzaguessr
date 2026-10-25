@@ -700,7 +700,6 @@
         "deezer": "https://www.deezer.com/track/4104897741"
       },
       "duration": 157,
-      "isNew": true
     },
     {
       "id": 51,
@@ -715,7 +714,6 @@
         "deezer": "https://www.deezer.com/track/4157201062"
       },
       "duration": 153,
-      "isNew": true
     },
     {
       "id": 52,
@@ -734,15 +732,15 @@
     },
     {
       "id": 53,
-      "releaseDate": null,
+      "releaseDate": "2026-10-23",
       "title": "LUVBYT3 - Animal (Aeons Ago remix)",
       "links": {
-        "spotify": "",
-        "appleMusic": "",
-        "youtube": "",
-        "amazonMusic": "",
-        "tidal": "",
-        "deezer": ""
+        "spotify": "https://open.spotify.com/track/0X07CCbdMgzJL7GHfuW5yA?si=3a147f78d24b4d35",
+        "appleMusic": "https://music.apple.com/us/song/animal-aeons-ago-radio-edit/6820344876",
+        "youtube": "https://www.youtube.com/watch?v=BgD0TpPUcCY",
+        "amazonMusic": "https://music.amazon.com/tracks/B0HMBBJ24F",
+        "tidal": "https://tidal.com/track/566585081",
+        "deezer": "https://www.deezer.com/track/4324518812"
       },
       "duration": 219,
       "isNew": true
